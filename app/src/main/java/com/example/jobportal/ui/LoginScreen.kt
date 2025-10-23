@@ -1,141 +1,134 @@
 package com.example.jobportal.ui
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.*
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.example.jobportal.ui.AuthViewModel
+import com.example.jobportal.model.UserLoginRequest
+import com.example.jobportal.model.UserLoginResponse
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.font.FontWeight
-import com.example.jobportal.network.ApiService
-import com.example.jobportal.network.User
-import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush // Keep Brush import
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (String, Boolean) -> Unit,
-    onNavigateToSignUp: () -> Unit
+    viewModel: AuthViewModel,
+    onLoginSuccess: () -> Unit, // Callback for navigation upon success
+    onNavigateToSignUp: () -> Unit // Callback to navigate to sign up
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    var passwordVisibility by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
 
-    // Use Material 3 Surface and MaterialTheme
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val scaffoldState = rememberScaffoldState()
+    val coroutineScope = rememberCoroutineScope()
+
+    // FIX: Switched to Brush.verticalGradient which correctly handles Alignment properties.
+    val gradientBackground = Brush.verticalGradient(
+        // Using light colors for a professional feel
+        colors = listOf(Color(0xFFE0F7FA), Color(0xFFFFFFFF)),
+        startY = 0f,
+        endY = Float.POSITIVE_INFINITY
+    )
+
+    Scaffold(scaffoldState = scaffoldState) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .background(gradientBackground) // Apply the gradient background
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Welcome Back",
-                // Use Material 3 typography
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Login to your account",
-                // Use Material 3 typography and color scheme
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+            Text("Welcome Back",
+                style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold))
+            Text("Sign In to SkillSync",
+                style = MaterialTheme.typography.subtitle1.copy(color = Color.Gray))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // OutlinedTextField from Material 3
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Filled.Email, contentDescription = "Email Icon") },
-                modifier = Modifier.fillMaxWidth(),
-                // Use Material 3 OutlinedTextFieldDefaults
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            // --- Elevated Card for Form Fields ---
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                elevation = 8.dp,
+                shape = RoundedCornerShape(16.dp),
+                backgroundColor = Color.White
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
 
-            // OutlinedTextField from Material 3
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Password Icon") },
-                trailingIcon = {
-                    val image = if (passwordVisibility)
-                        Icons.Filled.Visibility
-                    else Icons.Filled.VisibilityOff
+                    // Email Field
+                    OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                        Icon(imageVector = image, contentDescription = "Toggle Password Visibility")
-                    }
-                },
-                visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-                // Use Material 3 OutlinedTextFieldDefaults
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(24.dp))
+                    // --- Password Field with Show/Hide Toggle ---
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            } // --- End Card ---
 
-            // Material 3 Button
+            Spacer(modifier = Modifier.height(32.dp))
+
             Button(
                 onClick = {
-                    scope.launch {
-                        try {
-                            val response = ApiService.create().login(User(email, password))
-                            onLoginSuccess(response.email, response.isRecruiter)
-                        } catch (e: Exception) {
-                            // Only set the error state
-                            error = "Login failed: ${e.localizedMessage ?: e.message}"
+                    if (email.isBlank() || password.isBlank()) {
+                        coroutineScope.launch {
+                            scaffoldState.snackbarHostState.showSnackbar("Please enter your email and password.")
+                        }
+                        return@Button
+                    }
+
+                    val request = UserLoginRequest(email, password)
+
+                    viewModel.loginUser(request) { response: UserLoginResponse ->
+                        if (response.success) {
+                            // TODO: Store token/user data securely here before navigating
+                            onLoginSuccess()
+                            coroutineScope.launch { scaffoldState.snackbarHostState.showSnackbar("Login successful!") }
+                        } else {
+                            val message = response.message ?: "Login failed. Check credentials."
+                            coroutineScope.launch {
+                                scaffoldState.snackbarHostState.showSnackbar(
+                                    message = message,
+                                    actionLabel = "Dismiss"
+                                )
+                            }
                         }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = MaterialTheme.shapes.medium
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(horizontal = 8.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                // Use Material 3 typography
-                Text(text = "Login", style = MaterialTheme.typography.labelLarge)
+                Text("Sign In", style = MaterialTheme.typography.button.copy(fontWeight = FontWeight.Bold))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            error?.let {
-                // Use Material 3 colorScheme
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row {
-                Text("Don't have an account?")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Sign Up",
-                    // Use Material 3 colorScheme
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onNavigateToSignUp() }
-                )
+            TextButton(onClick = onNavigateToSignUp) {
+                Text("Don't have an account? Sign Up")
             }
         }
     }

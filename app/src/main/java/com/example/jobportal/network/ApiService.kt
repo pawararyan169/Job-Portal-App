@@ -1,60 +1,24 @@
-// ApiService.kt
-package com.example.jobportal.network
+package com.example.jobportal.api
 
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.*
-
-data class Job(
-    val _id: String? = null,
-    val title: String,
-    val company: String,
-    val description: String,
-    val location: String
-)
-
-data class User(
-    val email: String,
-    val password: String,
-    val isRecruiter: Boolean? = null
-)
-
-data class LoginResponse(
-    val email: String,
-    val isRecruiter: Boolean
-)
+import com.example.jobportal.model.JobPost
+import com.example.jobportal.model.UserLoginRequest
+import com.example.jobportal.model.UserLoginResponse
+import com.example.jobportal.model.UserRegistrationRequest
+import com.example.jobportal.model.UserRegistrationResponse
+import retrofit2.http.Body
+import retrofit2.http.POST
 
 interface ApiService {
-    @GET("jobs")
-    suspend fun getJobs(): List<Job>
 
-    @POST("jobs")
-    suspend fun postJob(@Body job: Job): Job
+    // FIX: Removed leading slash. Appends cleanly: .../api/auth/signup
+    @POST("signup")
+    suspend fun registerUser(@Body request: UserRegistrationRequest): UserRegistrationResponse
 
-    @POST("user/signup")
-    suspend fun signUp(@Body user: User)
+    // Appends cleanly: .../api/auth/login
+    @POST("login")
+    suspend fun loginUser(@Body request: UserLoginRequest): UserLoginResponse
 
-    @POST("user/login")
-    suspend fun login(@Body user: User): LoginResponse
-
-    companion object {
-        private const val BASE_URL = "http://10.0.2.2:5000/"
-
-        fun create(): ApiService {
-            val logging = HttpLoggingInterceptor()
-            logging.level = HttpLoggingInterceptor.Level.BODY
-            val client = OkHttpClient.Builder()
-                .addInterceptor(logging)
-                .build()
-
-            return Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(ApiService::class.java)
-        }
-    }
+    // This route uses an absolute path for /api/jobs/post, assuming it's outside the /api/auth router.
+    @POST("/api/jobs/post")
+    suspend fun postJob(@Body jobPost: JobPost): JobPost
 }

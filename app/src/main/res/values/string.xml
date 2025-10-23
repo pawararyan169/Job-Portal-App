@@ -1,2 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="app_name">Job Portal</string>
+    <string name="default_web_client_id">579768992191-9h2k59hjpm9h34bv507vmai45m9l6b45.apps.googleusercontent.com</string>
+</resources>

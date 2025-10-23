@@ -1,182 +1,161 @@
 package com.example.jobportal.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults // FIX: Added OutlinedTextFieldDefaults for M3 color access
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.jobportal.ui.AuthViewModel
+import com.example.jobportal.model.UserRegistrationRequest
+import com.example.jobportal.model.UserRegistrationResponse
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-import com.example.jobportal.network.ApiService
-import com.example.jobportal.network.User
-import kotlinx.coroutines.launch
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.background
 
 @Composable
-fun SignUpScreen(onSignUpSuccess: () -> Unit, onNavigateToLogin: () -> Unit) {
+fun SignUpScreen(
+    viewModel: AuthViewModel,
+    onNavigateToLogin: () -> Unit
+) {
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isRecruiter by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
 
-    var passwordVisibility by remember { mutableStateOf(false) }
-    var confirmPasswordVisibility by remember { mutableStateOf(false) }
+    // State for password visibility toggles
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        // FIX: M2 colors.background -> M3 colorScheme.background
-        color = MaterialTheme.colorScheme.background
-    ) {
+    val scaffoldState = rememberScaffoldState()
+    val coroutineScope = rememberCoroutineScope()
+
+    // Professional vertical gradient background
+    val gradientBackground = Brush.verticalGradient(
+        colors = listOf(Color(0xFFE0F7FA), Color(0xFFFFFFFF)),
+        startY = 0f,
+        endY = Float.POSITIVE_INFINITY
+    )
+
+    Scaffold(scaffoldState = scaffoldState) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .background(gradientBackground) // Apply the gradient background
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Create Account",
-                // FIX: M2 typography.h4 -> M3 typography.headlineMedium
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Sign up to get started",
-                // FIX: M2 typography.subtitle1 -> M3 typography.bodyLarge
-                style = MaterialTheme.typography.bodyLarge,
-                // FIX: M2 colors.onBackground -> M3 colorScheme.onBackground
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
-            )
+            Text("Create Account",
+                style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold))
+            Text("Join SkillSync now",
+                style = MaterialTheme.typography.subtitle1.copy(color = Color.Gray))
             Spacer(modifier = Modifier.height(24.dp))
 
-            // FIX: OutlinedTextField is M3, must use M3 defaults for colors
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Filled.Email, contentDescription = "Email Icon") },
-                modifier = Modifier.fillMaxWidth(),
-                // FIX: Use M3 OutlinedTextFieldDefaults.colors
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            // --- Elevated Card for Form Fields ---
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                elevation = 8.dp,
+                shape = RoundedCornerShape(16.dp),
+                backgroundColor = Color.White
+            ) {
+                Column(modifier = Modifier.padding(24.dp)) {
 
-            // FIX: OutlinedTextField is M3, must use M3 defaults for colors
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Password Icon") },
-                trailingIcon = {
-                    val image = if (passwordVisibility) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    IconButton(onClick = { passwordVisibility = !passwordVisibility }) {
-                        Icon(imageVector = image, contentDescription = "Toggle Password Visibility")
+                    // Name Field
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Email Field
+                    OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // --- Password Field with Show/Hide Toggle ---
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // --- Confirm Password Field with Show/Hide Toggle ---
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirm Password") },
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                Icon(imageVector = image, contentDescription = if (confirmPasswordVisible) "Hide confirm password" else "Show confirm password")
+                            }
+                        },
+                        isError = password.isNotBlank() && password != confirmPassword,
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Role Toggle
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isRecruiter, onCheckedChange = { isRecruiter = it })
+                        Text("Sign up as Recruiter", style = MaterialTheme.typography.body1)
                     }
-                },
-                visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-                // FIX: Use M3 OutlinedTextFieldDefaults.colors
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+                }
+            } // --- End Card ---
 
-            // FIX: OutlinedTextField is M3, must use M3 defaults for colors
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Confirm Password Icon") },
-                trailingIcon = {
-                    val image = if (confirmPasswordVisibility) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    IconButton(onClick = { confirmPasswordVisibility = !confirmPasswordVisibility }) {
-                        Icon(imageVector = image, contentDescription = "Toggle Confirm Password Visibility")
-                    }
-                },
-                visualTransformation = if (confirmPasswordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
-                // FIX: Use M3 OutlinedTextFieldDefaults.colors
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    cursorColor = MaterialTheme.colorScheme.primary
-                )
-            )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Checkbox is M3
-                Checkbox(checked = isRecruiter, onCheckedChange = { isRecruiter = it })
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Register as Recruiter")
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Button is M3
             Button(
                 onClick = {
-                    if (password != confirmPassword) {
-                        error = "Passwords do not match"
+                    if (password != confirmPassword || name.isBlank() || email.isBlank() || password.isBlank()) {
+                        coroutineScope.launch {
+                            scaffoldState.snackbarHostState.showSnackbar("Please fill all fields and ensure passwords match.")
+                        }
                         return@Button
                     }
-                    scope.launch {
-                        try {
-                            ApiService.create().signUp(User(email, password, isRecruiter))
-                            onSignUpSuccess()
-                        } catch (e: Exception) {
-                            error = "Sign up failed: ${e.localizedMessage ?: e.message}"
+
+                    val request = UserRegistrationRequest(email, name, password, confirmPassword, isRecruiter)
+
+                    viewModel.registerUser(request) { response: UserRegistrationResponse ->
+                        if (response.success) {
+                            onNavigateToLogin()
+                            coroutineScope.launch { scaffoldState.snackbarHostState.showSnackbar("Registration successful! Please log in.") }
+                        } else {
+                            coroutineScope.launch {
+                                scaffoldState.snackbarHostState.showSnackbar(response.message, actionLabel = "Dismiss")
+                            }
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(horizontal = 8.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                // FIX: M2 typography.button -> M3 typography.labelLarge
-                Text("Sign Up", style = MaterialTheme.typography.labelLarge)
+                Text("Sign Up", style = MaterialTheme.typography.button.copy(fontWeight = FontWeight.Bold))
             }
+
             Spacer(modifier = Modifier.height(16.dp))
-
-            error?.let {
-                // FIX: M2 colors.error -> M3 colorScheme.error
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row {
-                Text("Already have an account?")
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Login",
-                    // FIX: M2 colors.primary -> M3 colorScheme.primary
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onNavigateToLogin() }
-                )
+            TextButton(onClick = onNavigateToLogin) {
+                Text("Already have an account? Log In")
             }
         }
     }
