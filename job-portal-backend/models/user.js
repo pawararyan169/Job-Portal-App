@@ -3,7 +3,6 @@ const Schema = mongoose.Schema;
 
 // Define the User Schema
 const UserSchema = new Schema({
-    // CRITICAL: Path `name` is required by Mongoose validation
     name: {
         type: String,
         required: true,
@@ -15,7 +14,7 @@ const UserSchema = new Schema({
         required: true,
         unique: true,
         trim: true,
-        lowercase: true
+        lowercase: true // CRITICAL: Ensures email is stored in lowercase
     },
     password: {
         type: String,
@@ -26,14 +25,11 @@ const UserSchema = new Schema({
         type: String,
         enum: ['jobseeker', 'recruiter'],
         default: 'jobseeker'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
 }, {
     timestamps: true
 });
 
 const User = mongoose.model('User', UserSchema);
+
 module.exports = User;

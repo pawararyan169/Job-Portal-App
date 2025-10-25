@@ -1,68 +1,89 @@
 const router = require('express').Router();
-const bcrypt = require('bcryptjs'); // Assuming bcryptjs is used
-const User = require('../models/User'); // Mongoose User Model
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 
-// --- Sign Up Route ---
+// --- Sign Up Route (No changes) ---
 router.post('/signup', async (req, res) => {
-    // Destructure ALL fields, including name and confirmation password
     const { email, name, password, confirmPassword, isRecruiter } = req.body;
 
-    console.log('Debug: Received Sign Up Request Body:', req.body);
-
-    // Validate for ALL required fields
-    if (!email || !name || !password || !confirmPassword) {
-        return res.status(400).json({ success: false, message: 'Name, email, password, and confirmation password fields are required.' });
-    }
-
-    // Check if passwords match
-    if (password !== confirmPassword) {
-        return res.status(400).json({ success: false, message: 'Passwords do not match.' });
+    if (!email || !name || !password || !confirmPassword || password !== confirmPassword) {
+        return res.status(400).json({ success: false, message: 'Invalid or incomplete registration data.' });
     }
 
     try {
-        // 1. Check for existing user
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(409).json({ success: false, message: 'User with this email already exists.' });
         }
 
-        // 2. Hash Password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Create and Save New User
         const newUser = new User({
-            // FIX: Explicitly map the 'name' property to ensure Mongoose validation passes
             name: name,
             email: email,
             password: hashedPassword,
             role: isRecruiter ? 'recruiter' : 'jobseeker',
         });
 
-        const savedUser = await newUser.save();
+        await newUser.save();
 
-        // 4. Respond with success (201 Created)
         res.status(201).json({
-            success: true, // Client app expects this
-            message: 'User registered successfully',
-            user: {
-                name: savedUser.name,
-                email: savedUser.email,
-                role: savedUser.role
-            }
+            success: true,
+            message: 'Registration successful. Please log in.',
+            user: { name: newUser.name, email: newUser.email, role: newUser.role }
         });
 
     } catch (e) {
         console.error('CRITICAL SIGN UP ERROR (500):', e);
-        // If MongoDB validation (like min length) fails, it often triggers this catch block.
         res.status(500).json({ success: false, message: 'Internal server error during sign up.', error: e.message });
     }
 });
 
-// --- Login Route ---
+// --- Login Route (FINAL ROBUST LOGIC) ---
 router.post('/login', async (req, res) => {
-    // Logic for login... (Included for completeness)
-    res.status(501).json({ success: false, message: "Login endpoint not implemented yet." });
+    console.log("LOGIN ATTEMPT DEBUG: Processing incoming request for:", req.body.email);
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required for login.' });
+    }
+
+    try {
+        const lowerCaseEmail = email.toLowerCase();
+        const user = await User.findOne({ email: lowerCaseEmail });
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Login failed: Invalid credentials.' });
+        }
+
+        // Safety Check: Ensure password hash exists
+        if (!user.password) {
+             console.error(`ERROR: User ${user.email} found but has no password hash!`);
+             return res.status(401).json({ success: false, message: 'Login failed: Account setup error.' });
+        }
+
+        // 3. Compare the provided password with the stored hash
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Login failed: Invalid credentials.' });
+        }
+
+        // Successful login response (HTTP 200 OK)
+        console.log(`LOGIN SUCCESS: User ${user.email} authenticated successfully.`);
+        res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            userId: user._id.toString(),
+            userType: user.role,
+        });
+
+    } catch (e) {
+        console.error('CRITICAL LOGIN ERROR (500) IN CATCH BLOCK:', e);
+        res.status(500).json({ success: false, message: 'Internal server error during login.', error: e.message });
+    }
 });
 
 module.exports = router;

@@ -11,7 +11,7 @@ data class User(
     val photoUrl: String?
 )
 
-// Minimal required models for communication
+// --- JOB/PROFILE MODELS ---
 data class JobPost(
     val id: Int = 0,
     val title: String,
@@ -19,6 +19,28 @@ data class JobPost(
     val recruiterId: Int
 )
 
+data class ProfileUpdateRequest(
+    val userId: String,
+    val fullName: String,
+    val headline: String,
+    val summary: String,
+    val phone: String,
+    val city: String,
+    val highestEducation: String
+)
+
+data class JobSeekerProfile(
+    val userId: String,
+    val fullName: String,
+    val headline: String,
+    val summary: String,
+    val phone: String,
+    val city: String,
+    val highestEducation: String,
+    val isComplete: Boolean = true
+)
+
+// --- AUTH MODELS ---
 data class UserRegistrationRequest(
     val email: String,
     val name: String,
@@ -37,10 +59,10 @@ data class UserLoginRequest(
     val password: String
 )
 
-// FIX: Added the 'message' field so the LoginScreen can access response.message
 data class UserLoginResponse(
     val success: Boolean,
     val token: String?,
     val userType: String?,
-    val message: String? // <-- NEW FIELD
+    val message: String?,
+    val userId: String?
 )

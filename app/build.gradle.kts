@@ -63,6 +63,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material")
+    // In dependencies { ... } of app/build.gradle.kts
+    implementation("androidx.compose.material:material-icons-extended")
 
     // --- Lifecycle and ViewModel ---
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
@@ -82,6 +84,7 @@ dependencies {
     val retrofit_version = "2.11.0"
     implementation("com.squareup.retrofit2:retrofit:$retrofit_version")
     implementation("com.squareup.retrofit2:converter-gson:$retrofit_version")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // --- Navigation ---
     implementation("androidx.navigation:navigation-compose:2.7.7")
@@ -97,6 +100,7 @@ dependencies {
     // 3. Google ID Token support (Keep this for GetGoogleIdOption)
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // --- Testing Dependencies ---
     testImplementation("junit:junit:4.13.2")
