@@ -112,7 +112,7 @@ fun SignUpScreen(
             ) {
                 Text("Create Account",
                     style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold, color = Color.Black))
-                Text("Join the Job Portal",
+                Text("Join SkillSync",
                     style = MaterialTheme.typography.subtitle1.copy(color = Color.DarkGray))
                 Spacer(modifier = Modifier.height(32.dp))
 

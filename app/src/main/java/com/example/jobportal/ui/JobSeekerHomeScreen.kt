@@ -24,9 +24,10 @@ data class DrawerItem(val icon: ImageVector, val title: String, val route: Strin
 
 @Composable
 fun JobSeekerHomeScreen(
-    userEmail: String,
-    onNavigate: (String) -> Unit,
-    onLogout: () -> Unit,
+    userEmail: String, // REQUIRED PARAMETER 1 (The compiler was looking for this name)
+    onNavigate: (String) -> Unit, // REQUIRED PARAMETER 2
+    onViewJobDetails: (String) -> Unit, // REQUIRED PARAMETER 3
+    onLogout: () -> Unit, // REQUIRED PARAMETER 4
     viewModel: JobFeedViewModel = viewModel()
 ) {
     val drawerItems = listOf(
@@ -101,15 +102,15 @@ fun JobSeekerHomeScreen(
             JobFeedContent(
                 state = jobFeedState,
                 modifier = Modifier.padding(padding).fillMaxSize(),
-                onRefresh = viewModel::refreshJobs
+                onRefresh = viewModel::refreshJobs,
+                onJobClick = onViewJobDetails
             )
         }
     )
 }
 
-// --- Composable to display the state of the job feed ---
 @Composable
-fun JobFeedContent(state: JobFeedState, modifier: Modifier, onRefresh: () -> Unit) {
+fun JobFeedContent(state: JobFeedState, modifier: Modifier, onRefresh: () -> Unit, onJobClick: (String) -> Unit) {
     if (state.isLoading) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -137,21 +138,20 @@ fun JobFeedContent(state: JobFeedState, modifier: Modifier, onRefresh: () -> Uni
                 Text("Showing ${state.jobs.size} jobs available", style = MaterialTheme.typography.subtitle2, color = Color.Gray, modifier = Modifier.padding(vertical = 8.dp))
             }
             items(state.jobs) { job ->
-                JobCard(job = job)
+                JobCard(job = job, onJobClick = onJobClick)
                 Divider()
             }
         }
     }
 }
 
-// --- Individual Job Card Composable ---
 @Composable
-fun JobCard(job: Job) {
+fun JobCard(job: Job, onJobClick: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clickable { /* Handle click to view job details */ },
+            .clickable { onJobClick(job.id) },
         elevation = 4.dp,
         shape = MaterialTheme.shapes.medium
     ) {
@@ -164,7 +164,8 @@ fun JobCard(job: Job) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("${job.jobType} | ${job.salaryRange}", style = MaterialTheme.typography.body2, color = Color.Gray)
+                // Localized Currency
+                Text("${job.jobType} | ₹${job.salaryRange.replace("$", "")}", style = MaterialTheme.typography.body2, color = Color.Gray)
                 Text(job.postDate, style = MaterialTheme.typography.caption, color = Color.DarkGray)
             }
             Spacer(modifier = Modifier.height(8.dp))

@@ -14,8 +14,9 @@ import com.example.jobportal.ui.SignUpScreen
 import com.example.jobportal.ui.RecruiterPostJobScreen
 import com.example.jobportal.ui.JobSeekerHomeScreen
 import com.example.jobportal.ui.ProfileSetupScreen
-import com.example.jobportal.ui.RecruiterDashboardScreen // FIX: Ensure this is imported
-import com.example.jobportal.ui.SettingsScreen // FIX: Ensure this is imported
+import com.example.jobportal.ui.RecruiterDashboardScreen
+import com.example.jobportal.ui.SettingsScreen
+import com.example.jobportal.ui.JobDetailScreen
 import com.example.jobportal.model.ProfileUpdateRequest
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +30,9 @@ sealed class Screen(val route: String) {
     data object RecruiterDashboard : Screen("recruiter_dashboard")
     data object EditProfile : Screen("edit_profile")
     data object Settings : Screen("settings")
-
+    data object JobDetail : Screen("job_detail/{jobId}") {
+        fun createRoute(jobId: String) = "job_detail/$jobId"
+    }
     data object PostJob : Screen("post_job/{recruiterId}") {
         fun createRoute(recruiterId: Int) = "post_job/$recruiterId"
     }
@@ -105,12 +108,13 @@ fun AppNavGraph(
             }
         }
 
-        // --- Home Screen ---
+        // --- Home Screen (Job Seeker Hub) ---
         composable(Screen.Home.route) {
             val userEmailToUse = userEmail ?: "Guest"
 
+            // FIX: Explicitly naming all arguments to avoid positional mismatch
             JobSeekerHomeScreen(
-                userEmail = userEmailToUse,
+                userEmail = userEmailToUse, // FIX: Passing the userEmail parameter
                 onNavigate = { route ->
                     when (route) {
                         "edit_profile" -> navController.navigate(Screen.SetupProfile.createSetupProfileRoute(currentUserId ?: "0", userEmailToUse))
@@ -118,12 +122,31 @@ fun AppNavGraph(
                         else -> navController.navigate(route)
                     }
                 },
+                onViewJobDetails = { jobId ->
+                    navController.navigate(Screen.JobDetail.createRoute(jobId))
+                },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
                 }
             )
+        }
+
+        // --- Job Detail Screen (New Destination) ---
+        composable(Screen.JobDetail.route) { backStackEntry ->
+            val jobId = backStackEntry.arguments?.getString("jobId")
+
+            if (jobId != null) {
+                JobDetailScreen(
+                    jobId = jobId,
+                    onBack = { navController.popBackStack() }
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: Job details not found.")
+                }
+            }
         }
 
         // --- Recruiter Dashboard Screen ---

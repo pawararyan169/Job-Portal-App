@@ -21,62 +21,59 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
-
 import com.example.jobportal.model.ProfileUpdateRequest
-import com.example.jobportal.network.ApiService
 import com.example.jobportal.api.RetrofitClient
 import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileSetupScreen(
     userId: String,
-    userEmail: String,
     onProfileSaved: () -> Unit,
     onBack: () -> Unit
 ) {
+
     var fullName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf(userEmail) }
     var phone by remember { mutableStateOf("") }
     var yearsOfExperience by remember { mutableStateOf("") }
     var skills by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var highestEducation by remember { mutableStateOf("") }
 
+    // State variables for file uploads
     var profilePhotoUri by remember { mutableStateOf<Uri?>(null) }
     var resumeUri by remember { mutableStateOf<Uri?>(null) }
 
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
-
+    val scrollState = rememberScrollState()
     val apiService = remember { RetrofitClient.apiService }
 
-    val scrollState = rememberScrollState()
-
-    // Define the focus/accent color (Ocean Blue)
+    // Theme Colors from SignUpScreen
     val OceanBlue = Color(0xFF0077B6)
 
-    // Define custom colors for text fields
+    // Custom TextField Colors matching SignUpScreen aesthetic
     val customTextFieldColors = TextFieldDefaults.outlinedTextFieldColors(
         focusedBorderColor = OceanBlue,
         unfocusedBorderColor = Color.LightGray,
         cursorColor = OceanBlue,
         textColor = Color.Black,
-        backgroundColor = Color.White,
-        focusedLabelColor = OceanBlue,
-        unfocusedLabelColor = Color.DarkGray
+        backgroundColor = Color.White
     )
 
-    // Dynamic gradient background (Matching Login/SignUp)
+
     val gradientBackground = Brush.verticalGradient(
         colors = listOf(Color(0xFF8EC5FC), Color(0xFFE0C340)),
         startY = 0f,
         endY = Float.POSITIVE_INFINITY
     )
 
+    // --- File Pickers ---
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -89,6 +86,8 @@ fun ProfileSetupScreen(
         resumeUri = uri
     }
 
+
+
     Scaffold(scaffoldState = scaffoldState) { padding ->
         // Use a Box to layer the background gradient and the shapes
         Box(
@@ -96,13 +95,13 @@ fun ProfileSetupScreen(
                 .fillMaxSize()
                 .background(gradientBackground)
                 .padding(padding)
+                .imePadding() // Adjusts for the keyboard
         ) {
-            // --- Animated and Colorful Background Shapes ---
+            // --- Animated and Colorful Background Shapes (Copied from SignUpScreen) ---
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val canvasWidth = size.width
                 val canvasHeight = size.height
 
-                // Draw translucent circles and shapes
                 drawCircle(
                     color = Color.White.copy(alpha = 0.1f),
                     radius = canvasWidth * 0.4f,
@@ -123,123 +122,129 @@ fun ProfileSetupScreen(
                     )
                 }
             }
-            // --- End Background Shapes ---
 
-            // --- Content Column (Scrollable Fix) ---
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .imePadding() // Handles keyboard overlap
-                    .fillMaxHeight(),
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState), // Makes the entire content scrollable
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                verticalArrangement = Arrangement.Top // Changed to Top for profile screen
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    "Complete Your Profile",
-                    style = MaterialTheme.typography.h5,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.Black
-                )
-                Text(
-                    "Mandatory fields required to start applying for jobs.",
-                    style = MaterialTheme.typography.subtitle1,
-                    color = Color.DarkGray // Changed to DarkGray for contrast on light background elements
-                )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // --- SCROLLABLE FORM CONTENT WRAPPER ---
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(scrollState)
+                Text("Complete Profile",
+                    style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold, color = Color.Black))
+                Text("Tell us about yourself to find the best jobs.",
+                    style = MaterialTheme.typography.subtitle1.copy(color = Color.DarkGray))
+                Spacer(modifier = Modifier.height(32.dp))
+
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    backgroundColor = Color.White.copy(alpha = 0.95f)
                 ) {
+                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
 
-                    // PROFILE PHOTO UPLOAD
-                    Card(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .align(Alignment.CenterHorizontally)
-                            .clickable { photoPickerLauncher.launch("image/*") },
-                        shape = RoundedCornerShape(50.dp),
-                        elevation = 4.dp,
-                        backgroundColor = Color.White // Set card background to white
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            if (profilePhotoUri != null) {
-                                AsyncImage(
-                                    model = profilePhotoUri,
-                                    contentDescription = "Profile Photo",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Text("Add Photo", style = MaterialTheme.typography.caption, color = Color.Gray)
+                        // PROFILE PHOTO UPLOAD (Card style matching the aesthetic)
+                        Card(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clickable { photoPickerLauncher.launch("image/*") },
+                            shape = RoundedCornerShape(50.dp),
+                            elevation = 4.dp,
+                            backgroundColor = OceanBlue // Use accent color for empty state
+                        ) {
+                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                if (profilePhotoUri != null) {
+                                    AsyncImage(
+                                        model = profilePhotoUri,
+                                        contentDescription = "Profile Photo",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(Icons.Filled.PhotoCamera, contentDescription = "Add Photo", tint = Color.White, modifier = Modifier.size(40.dp))
+                                }
                             }
                         }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    // --- Input Fields (Wrapped in a single Card for uniform background) ---
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(12.dp),
-                        backgroundColor = Color.White
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            OutlinedTextField(value = fullName, onValueChange = { fullName = it }, label = { Text("Full Name") }, modifier = Modifier.fillMaxWidth(), colors = customTextFieldColors)
-                            Spacer(modifier = Modifier.height(8.dp))
 
-                            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), enabled = false, colors = customTextFieldColors)
-                            Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(value = fullName, onValueChange = { fullName = it }, label = { Text("Full Name") },
+                            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = "Name Icon", tint = OceanBlue) },
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = customTextFieldColors)
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone Number") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), colors = customTextFieldColors)
-                            Spacer(modifier = Modifier.height(8.dp))
 
-                            OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Current City") }, modifier = Modifier.fillMaxWidth(), colors = customTextFieldColors)
-                            Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone Number") },
+                            leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = "Phone Icon", tint = OceanBlue) },
+                            modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                            shape = RoundedCornerShape(8.dp), colors = customTextFieldColors)
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                            OutlinedTextField(value = highestEducation, onValueChange = { highestEducation = it }, label = { Text("Highest Education") }, modifier = Modifier.fillMaxWidth(), colors = customTextFieldColors)
-                            Spacer(modifier = Modifier.height(8.dp))
+                        // City Field
+                        OutlinedTextField(value = city, onValueChange = { city = it }, label = { Text("Current City") },
+                            leadingIcon = { Icon(Icons.Filled.LocationOn, contentDescription = "City Icon", tint = OceanBlue) },
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = customTextFieldColors)
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                            OutlinedTextField(
-                                value = yearsOfExperience,
-                                onValueChange = { yearsOfExperience = it.filter { char -> char.isDigit() } },
-                                label = { Text("Years of Experience") },
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                colors = customTextFieldColors
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
 
-                            OutlinedTextField(value = skills, onValueChange = { skills = it }, label = { Text("Skills (Headline)") }, modifier = Modifier.fillMaxWidth(), minLines = 3, colors = customTextFieldColors)
-                            Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedTextField(value = highestEducation, onValueChange = { highestEducation = it }, label = { Text("Highest Education") },
+                            leadingIcon = { Icon(Icons.Filled.School, contentDescription = "Education Icon", tint = OceanBlue) },
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = customTextFieldColors)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+
+                        OutlinedTextField(
+                            value = yearsOfExperience,
+                            onValueChange = { yearsOfExperience = it.filter { char -> char.isDigit() } },
+                            label = { Text("Years of Experience") },
+                            leadingIcon = { Icon(Icons.Filled.Star, contentDescription = "Experience Icon", tint = OceanBlue) },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            shape = RoundedCornerShape(8.dp), colors = customTextFieldColors
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+
+                        OutlinedTextField(value = skills, onValueChange = { skills = it }, label = { Text("Skills (Headline/Summary)") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = "Skills Icon", tint = OceanBlue) },
+                            modifier = Modifier.fillMaxWidth(), minLines = 3, shape = RoundedCornerShape(8.dp), colors = customTextFieldColors)
+                        Spacer(modifier = Modifier.height(24.dp))
+
+
+                        Button(
+                            onClick = { resumePickerLauncher.launch("application/pdf") },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFEEEEEE), contentColor = OceanBlue)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.FileUpload, contentDescription = "Upload Resume", modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    if (resumeUri != null) "Resume Selected: READY" else "Upload Resume (PDF)",
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = OceanBlue
+                                )
+                            }
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-
-                    // RESUME UPLOAD BUTTON (Outside the inner card, aligned with the main column)
-                    Button(
-                        onClick = { resumePickerLauncher.launch("application/pdf") },
-                        modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFEEEEEE), contentColor = Color.Black)
-                    ) {
-                        Text(if (resumeUri != null) "Resume Selected" else "Upload Resume (PDF)", fontWeight = FontWeight.SemiBold)
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
-                // --- END SCROLLABLE CONTENT ---
 
-                // --- Submit Button (Fixed at Bottom) ---
+                Spacer(modifier = Modifier.height(32.dp)) // Padding before button
+
+
                 Button(
                     onClick = {
                         val years = yearsOfExperience.toIntOrNull()
 
-                        if (fullName.isBlank() || email.isBlank() || years == null || resumeUri == null) {
-                            coroutineScope.launch { scaffoldState.snackbarHostState.showSnackbar("Please fill all fields and upload your CV/Resume.") }
+                        if (fullName.isBlank() || years == null || resumeUri == null) {
+                            coroutineScope.launch { scaffoldState.snackbarHostState.showSnackbar("Please fill all required fields and upload your CV/Resume.") }
                             return@Button
                         }
 
@@ -256,29 +261,26 @@ fun ProfileSetupScreen(
                         coroutineScope.launch {
                             try {
                                 val response = apiService.updateProfile(request)
+                                // In a real app, you would handle file upload here (profilePhotoUri, resumeUri)
                                 onProfileSaved()
                             } catch (e: Exception) {
-                                scaffoldState.snackbarHostState.showSnackbar("Profile update failed: ${e.message}. Check backend console.")
+                                scaffoldState.snackbarHostState.showSnackbar("Profile update failed: ${e.message}", actionLabel = "Dismiss")
                             }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
+                    modifier = Modifier.fillMaxWidth().height(50.dp).padding(horizontal = 8.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = OceanBlue)
                 ) {
-                    Text("Save and Continue", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Save and Continue", style = MaterialTheme.typography.button.copy(fontWeight = FontWeight.Bold, color = Color.White))
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    "Back",
-                    modifier = Modifier.clickable { onBack() },
-                    color = MaterialTheme.colors.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(24.dp)) // Final bottom space
+                TextButton(onClick = onBack) {
+                    Text("Back to Dashboard", color = OceanBlue)
+                }
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

@@ -138,7 +138,7 @@ fun LoginScreen(
             ) {
                 Text("Welcome Back",
                     style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold, color = Color.Black))
-                Text("Sign In to Job Portal",
+                Text("Sign In to SkillSync",
                     style = MaterialTheme.typography.subtitle1.copy(color = Color.DarkGray))
                 Spacer(modifier = Modifier.height(32.dp))
 
