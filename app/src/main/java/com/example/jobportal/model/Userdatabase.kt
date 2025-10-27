@@ -21,7 +21,6 @@ abstract class UserDatabase : RoomDatabase() {
                     UserDatabase::class.java,
                     "user_database"
                 )
-                    // CRITICAL FIX: Allows Room to clear corrupted data on startup
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

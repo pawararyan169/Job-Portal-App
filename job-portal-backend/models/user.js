@@ -1,35 +1,34 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-// Define the User Schema
-const UserSchema = new Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
-        minlength: 2
-    },
+const UserSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true,
-        trim: true,
-        lowercase: true // CRITICAL: Ensures email is stored in lowercase
+        unique: true, // Unique constraint is critical for 409 error logic
+        trim: true
+    },
+    name: {
+        type: String,
+        required: true,
+        trim: true
     },
     password: {
         type: String,
-        required: true,
-        minlength: 6
+        required: true
     },
     role: {
         type: String,
-        enum: ['jobseeker', 'recruiter'],
-        default: 'jobseeker'
+        enum: ['job_seeker', 'recruiter'], // Must match the string used in auth.js
+        default: 'job_seeker'
+    },
+    isProfileComplete: {
+        type: Boolean,
+        default: false
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: true
 });
 
-const User = mongoose.model('User', UserSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);

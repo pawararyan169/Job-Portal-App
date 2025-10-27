@@ -1,65 +1,109 @@
 package com.example.jobportal.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.jobportal.api.RetrofitClient // FIX: Corrected import
 import com.example.jobportal.model.JobPost
 import kotlinx.coroutines.launch
 
+// Assuming AuthViewModel holds the token logic
+// NOTE: You must provide a valid AuthViewModel instance here if you rely on its token getter.
 @Composable
 fun RecruiterPostJobScreen(
-    // Assuming you pass the Recruiter's ID to this screen
-    recruiterId: Int
+    recruiterId: Int,
+    jobFeedViewModel: JobFeedViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
+    onPostSuccess: () -> Unit = {}
 ) {
     var jobTitle by remember { mutableStateOf("") }
     var jobDescription by remember { mutableStateOf("") }
-    val coroutineScope = rememberCoroutineScope()
-    val scaffoldState = rememberScaffoldState()
+    var salaryRange by remember { mutableStateOf("") }
 
-    Scaffold(scaffoldState = scaffoldState) { padding ->
+    val scrollState = rememberScrollState()
+    val scaffoldState = rememberScaffoldState()
+    val coroutineScope = rememberCoroutineScope()
+
+    val OceanBlue = Color(0xFF0077B6)
+
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = {
+            TopAppBar(title = { Text("Post New Job", color = Color.White) }, backgroundColor = OceanBlue)
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
                 .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Post a New Job", style = MaterialTheme.typography.h5)
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(value = jobTitle, onValueChange = { jobTitle = it }, label = { Text("Job Title") })
-            Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
-                value = jobDescription,
-                onValueChange = { jobDescription = it },
-                label = { Text("Description") },
-                modifier = Modifier.height(150.dp)
+                value = jobTitle,
+                onValueChange = { jobTitle = it },
+                label = { Text("Job Title") },
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(onClick = {
-                val jobPost = JobPost(
-                    title = jobTitle,
-                    description = jobDescription,
-                    recruiterId = recruiterId // FIX: Providing the required 'id' parameter
-                )
+            OutlinedTextField(
+                value = jobDescription,
+                onValueChange = { jobDescription = it },
+                label = { Text("Job Description") },
+                modifier = Modifier.fillMaxWidth().height(200.dp),
+                singleLine = false
+            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-                coroutineScope.launch {
-                    try {
-                        // Resolved: Correctly calling postJob on the ApiService
-                        val response = RetrofitClient.apiService.postJob(jobPost)
-                        scaffoldState.snackbarHostState.showSnackbar("Job Posted: ${response.title}")
-                    } catch (e: Exception) {
-                        scaffoldState.snackbarHostState.showSnackbar("Failed to post job: ${e.message}")
+            OutlinedTextField(
+                value = salaryRange,
+                onValueChange = { salaryRange = it },
+                label = { Text("Salary Range (e.g., $80K - $100K)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = {
+                    if (jobTitle.isBlank() || jobDescription.isBlank()) {
+                        coroutineScope.launch {
+                            scaffoldState.snackbarHostState.showSnackbar("Please fill in all required fields.")
+                        }
+                        return@Button
                     }
-                }
-            }) {
-                Text("Post Job")
+
+                    val newJob = JobPost(
+                        title = jobTitle,
+                        description = jobDescription,
+                        recruiterId = recruiterId // Use the ID passed to the screen
+                    )
+
+                    // --- FIX: Unresolved reference 'postJob' is now resolved ---
+                    jobFeedViewModel.postJob(newJob, authViewModel.getAuthToken()) { success, message ->
+                        coroutineScope.launch {
+                            if (success) {
+                                scaffoldState.snackbarHostState.showSnackbar(message)
+                                onPostSuccess()
+                            } else {
+                                scaffoldState.snackbarHostState.showSnackbar("Error: $message", actionLabel = "Dismiss")
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text("Publish Job")
             }
         }
     }

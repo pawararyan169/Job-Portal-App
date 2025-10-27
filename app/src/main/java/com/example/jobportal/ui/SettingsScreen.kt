@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExitToApp
@@ -25,9 +26,10 @@ data class SettingItem(val title: String, val subtitle: String, val icon: ImageV
 
 @Composable
 fun SettingsScreen(
-    userEmail: String,
+    userEmail: String, // CRITICAL FIX: The parameter the NavGraph needs to pass
     onNavigate: (String) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onBack: () -> Unit
 ) {
     val accountSettings = listOf(
         SettingItem("My Profile", "View and edit personal details", Icons.Default.PersonOutline, "edit_profile"),
@@ -46,13 +48,14 @@ fun SettingsScreen(
                 backgroundColor = MaterialTheme.colors.primary,
                 contentColor = Color.White,
                 navigationIcon = {
-                    IconButton(onClick = { /* onBack() logic */ }) {
-                        Icon(Icons.Default.ChevronRight, contentDescription = "Back")
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Back")
                     }
                 }
             )
         }
     ) { padding ->
+        // Main list is scrollable
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -91,7 +94,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start, verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.ExitToApp, contentDescription = "Logout", tint = Color.Red)
+                    Icon(Icons.Filled.ExitToApp, contentDescription = "Logout", tint = Color.Red)
                     Spacer(modifier = Modifier.width(16.dp))
                     Text("Sign Out", color = Color.Red, fontWeight = FontWeight.SemiBold)
                 }

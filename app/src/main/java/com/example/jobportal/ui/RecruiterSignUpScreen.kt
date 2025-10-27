@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.text.font.FontWeight
@@ -27,16 +28,16 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.foundation.background
-import androidx.compose.material.icons.filled.ArrowForward
 
 @Composable
-fun SignUpScreen(
+fun RecruiterSignUpScreen(
     viewModel: AuthViewModel,
     onNavigateToLogin: () -> Unit,
-    // FIX: ADDED MISSING PARAMETER (This resolves the NavGraph error)
-    onNavigateToRecruiterSignUp: () -> Unit
+    onSignUpSuccess: (userId: String, userEmail: String) -> Unit, // Callback to navigate to profile setup
+    onBackToJobSeekerSignUp: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
+    var companyName by remember { mutableStateOf("") } // Recruiter-specific field
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -46,11 +47,9 @@ fun SignUpScreen(
 
     val scaffoldState = rememberScaffoldState()
     val coroutineScope = rememberCoroutineScope()
-
     val scrollState = rememberScrollState()
 
     val OceanBlue = Color(0xFF0077B6)
-
     val customTextFieldColors = TextFieldDefaults.outlinedTextFieldColors(
         focusedBorderColor = OceanBlue,
         unfocusedBorderColor = Color.LightGray,
@@ -58,47 +57,58 @@ fun SignUpScreen(
         textColor = Color.Black,
         backgroundColor = Color.White
     )
-
+    // Reusing the same gradient background from LoginScreen
     val gradientBackground = Brush.verticalGradient(
         colors = listOf(Color(0xFF8EC5FC), Color(0xFFE0C340)),
         startY = 0f,
         endY = Float.POSITIVE_INFINITY
     )
 
-    Scaffold(scaffoldState = scaffoldState) { padding ->
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = {
+            TopAppBar(
+                title = { Text("Recruiter Sign Up", color = Color.White, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBackToJobSeekerSignUp) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back to Job Seeker Sign Up", tint = Color.White)
+                    }
+                },
+                backgroundColor = OceanBlue,
+                contentColor = Color.White
+            )
+        }
+    ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(gradientBackground)
                 .padding(padding)
         ) {
-            // --- Animated and Colorful Background Shapes ---
+            // --- Animated and Colorful Background Shapes (Reused) ---
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val canvasWidth = size.width
                 val canvasHeight = size.height
-
                 drawCircle(
                     color = Color.White.copy(alpha = 0.1f),
                     radius = canvasWidth * 0.4f,
                     center = Offset(canvasWidth * 0.1f, canvasHeight * 0.2f)
                 )
-
                 drawCircle(
                     color = Color(0xFFFFCC80).copy(alpha = 0.2f),
                     radius = canvasWidth * 0.25f,
                     center = Offset(canvasWidth * 0.8f, canvasHeight * 0.7f)
                 )
-
                 rotate(degrees = 45f, pivot = Offset(canvasWidth * 0.5f, canvasHeight * 0.5f)) {
                     drawRect(
                         color = Color(0xFF80DEEA).copy(alpha = 0.15f),
                         topLeft = Offset(canvasWidth * 0.3f, canvasHeight * 0.1f),
-                        size = androidx.compose.ui.geometry.Size(canvasWidth * 0.4f, canvasHeight * 0.2f)
+                        size = androidx.compose.ui.geometry.Size(canvasWidth * 0.4f, canvasWidth * 0.2f)
                     )
                 }
             }
 
-            // --- Content Column (Scrollable Fix) ---
+            // --- Content Column (Scrollable) ---
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -107,9 +117,10 @@ fun SignUpScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("Create Account",
+                Spacer(modifier = Modifier.height(32.dp))
+                Text("Recruiter Sign Up",
                     style = MaterialTheme.typography.h4.copy(fontWeight = FontWeight.Bold, color = Color.Black))
-                Text("Join SkillSync (Job Seeker)",
+                Text("Post Jobs and Find Talent",
                     style = MaterialTheme.typography.subtitle1.copy(color = Color.DarkGray))
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -123,14 +134,21 @@ fun SignUpScreen(
                     Column(modifier = Modifier.padding(24.dp)) {
 
                         // Name Field
-                        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") },
+                        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Your Name") },
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp),
+                            colors = customTextFieldColors
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Company Name Field (Recruiter Specific)
+                        OutlinedTextField(value = companyName, onValueChange = { companyName = it }, label = { Text("Company Name (Required)") },
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp),
                             colors = customTextFieldColors
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Email Field
-                        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") },
+                        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Company Email") },
                             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp),
                             colors = customTextFieldColors
                         )
@@ -138,9 +156,7 @@ fun SignUpScreen(
 
                         // --- Password Field ---
                         OutlinedTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = { Text("Password") },
+                            value = password, onValueChange = { password = it }, label = { Text("Password") },
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
                                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -155,9 +171,7 @@ fun SignUpScreen(
 
                         // --- Confirm Password Field ---
                         OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = { Text("Confirm Password") },
+                            value = confirmPassword, onValueChange = { confirmPassword = it }, label = { Text("Confirm Password") },
                             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
                                 val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -171,38 +185,41 @@ fun SignUpScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Role Toggle (Clickable TextButton for navigation)
+                        // Navigation link back to Job Seeker Sign Up
                         Row(
-                            modifier = Modifier.fillMaxWidth().clickable { onNavigateToRecruiterSignUp() }, // <-- Uses the new lambda
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End
+                            modifier = Modifier.fillMaxWidth().clickable { onBackToJobSeekerSignUp() },
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Sign up as Recruiter",
-                                style = MaterialTheme.typography.body1.copy(color = OceanBlue, fontWeight = FontWeight.SemiBold))
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Go back", tint = OceanBlue)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Icon(Icons.Default.ArrowForward, contentDescription = "Go to recruiter sign up", tint = OceanBlue)
+                            Text("Switch to Job Seeker Sign Up",
+                                style = MaterialTheme.typography.body1.copy(color = OceanBlue, fontWeight = FontWeight.SemiBold))
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- Fixed Bottom Buttons ---
+                // --- Sign Up Button ---
                 Button(
                     onClick = {
-                        if (password != confirmPassword || name.isBlank() || email.isBlank() || password.isBlank()) {
+                        if (password != confirmPassword || name.isBlank() || email.isBlank() || password.isBlank() || companyName.isBlank()) {
                             coroutineScope.launch {
-                                scaffoldState.snackbarHostState.showSnackbar("Please fill all fields and ensure passwords match.")
+                                scaffoldState.snackbarHostState.showSnackbar("Please fill all fields, including Company Name, and ensure passwords match.")
                             }
                             return@Button
                         }
 
-                        val request = UserRegistrationRequest(email, name, password, confirmPassword, false)
+                        val request = UserRegistrationRequest(email, name, password, confirmPassword, true)
 
                         viewModel.registerUser(request) { response: UserRegistrationResponse ->
                             if (response.success) {
-                                onNavigateToLogin()
-                                coroutineScope.launch { scaffoldState.snackbarHostState.showSnackbar("Registration successful! Please log in.") }
+                                // These fields are available because UserRegistrationResponse was fixed to include them.
+                                val newUserId = response.userId ?: "REC-DEFAULT"
+                                val newEmail = response.userEmail ?: email
+
+                                coroutineScope.launch { scaffoldState.snackbarHostState.showSnackbar("Recruiter registration successful!") }
+                                onSignUpSuccess(newUserId, newEmail) // NAVIGATE TO PROFILE SETUP
                             } else {
                                 coroutineScope.launch {
                                     scaffoldState.snackbarHostState.showSnackbar(response.message, actionLabel = "Dismiss")
@@ -214,7 +231,7 @@ fun SignUpScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = OceanBlue)
                 ) {
-                    Text("Sign Up (Job Seeker)", style = MaterialTheme.typography.button.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                    Text("Sign Up (Recruiter)", style = MaterialTheme.typography.button.copy(fontWeight = FontWeight.Bold, color = Color.White))
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -226,3 +243,5 @@ fun SignUpScreen(
         }
     }
 }
+
+

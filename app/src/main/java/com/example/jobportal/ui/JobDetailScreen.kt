@@ -106,3 +106,17 @@ fun JobDetailScreen(
     }
 }
 
+@Composable
+fun Job(
+    id: String,
+    title: String,
+    company: String,
+    location: String,
+    salaryRange: String,
+    descriptionSnippet: String,
+    postDate: String,
+    jobType: String
+) {
+    TODO("Not yet implemented")
+}
+

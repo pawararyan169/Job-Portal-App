@@ -17,26 +17,36 @@ import com.example.jobportal.ui.ProfileSetupScreen
 import com.example.jobportal.ui.RecruiterDashboardScreen
 import com.example.jobportal.ui.SettingsScreen
 import com.example.jobportal.ui.JobDetailScreen
-import com.example.jobportal.model.ProfileUpdateRequest
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.jobportal.ui.JobSeekerJobListScreen
+import com.example.jobportal.ui.RecruiterSignUpScreen
+import com.example.jobportal.ui.RecruiterProfileSetupScreen // <-- All components are imported here
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object Login : Screen("login")
     data object SignUp : Screen("signup")
-    data object SetupProfile : Screen("setup_profile/{userId}/{userEmail}")
+    data object RecruiterSignUp : Screen("recruiter_signup")
+    data object SetupProfile : Screen("setup_profile/{userId}/{userEmail}/{authToken}")
+    data object RecruiterProfileSetup : Screen("recruiter_profile_setup/{userId}/{userEmail}") {
+        fun createRoute(userId: String, userEmail: String) = "recruiter_profile_setup/$userId/$userEmail"
+    }
     data object RecruiterDashboard : Screen("recruiter_dashboard")
     data object EditProfile : Screen("edit_profile")
     data object Settings : Screen("settings")
+    data object JobSearch : Screen("job_search")
     data object JobDetail : Screen("job_detail/{jobId}") {
         fun createRoute(jobId: String) = "job_detail/$jobId"
     }
     data object PostJob : Screen("post_job/{recruiterId}") {
         fun createRoute(recruiterId: Int) = "post_job/$recruiterId"
     }
-    fun createSetupProfileRoute(userId: String, userEmail: String) = "setup_profile/$userId/{userEmail}"
+    fun createSetupProfileRoute(userId: String, userEmail: String, authToken: String) = "setup_profile/$userId/$userEmail/$authToken"
 }
 
 @Composable
@@ -51,10 +61,12 @@ fun AppNavGraph(
 ) {
     val authViewModel: AuthViewModel = viewModel()
 
+    val tokenForStartup = "STATIC_DEBUG_TOKEN"
+
     val finalStartDestination = when {
         userEmail == null -> Screen.Login.route
         userRole == "recruiter" -> Screen.RecruiterDashboard.route
-        currentUserId != null && !isProfileComplete -> Screen.SetupProfile.createSetupProfileRoute(currentUserId, userEmail)
+        currentUserId != null && !isProfileComplete -> Screen.SetupProfile.createSetupProfileRoute(currentUserId, userEmail, tokenForStartup)
         else -> Screen.Home.route
     }
 
@@ -68,8 +80,8 @@ fun AppNavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
-                onLoginSuccess = { userId, userEmail ->
-                    navController.navigate(Screen.SetupProfile.createSetupProfileRoute(userId, userEmail)) {
+                onLoginSuccess = { userId, userEmail, token ->
+                    navController.navigate(Screen.SetupProfile.createSetupProfileRoute(userId, userEmail, token)) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -77,23 +89,48 @@ fun AppNavGraph(
             )
         }
 
-        // --- Sign Up Screen ---
+        // --- Sign Up Screen (Job Seeker) ---
         composable(Screen.SignUp.route) {
             SignUpScreen(
                 viewModel = authViewModel,
-                onNavigateToLogin = { navController.navigate(Screen.Login.route) }
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                onNavigateToRecruiterSignUp = { navController.navigate(Screen.RecruiterSignUp.route) }
             )
         }
 
-        // --- Profile Setup Screen ---
-        composable(Screen.SetupProfile.route) { backStackEntry ->
+        // --- Recruiter Sign Up Screen ---
+        composable(Screen.RecruiterSignUp.route) {
+            RecruiterSignUpScreen(
+                viewModel = authViewModel,
+                onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+                onSignUpSuccess = { userId, userEmail ->
+                    val debugToken = "STATIC_DEBUG_TOKEN"
+                    navController.navigate(Screen.RecruiterProfileSetup.createRoute(userId, userEmail)) {
+                        popUpTo(Screen.RecruiterSignUp.route) { inclusive = true }
+                    }
+                },
+                onBackToJobSeekerSignUp = { navController.popBackStack() }
+            )
+        }
+
+        // --- Job Seeker Profile Setup Screen ---
+        composable(
+            route = Screen.SetupProfile.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("userEmail") { type = NavType.StringType },
+                navArgument("authToken") { type = NavType.StringType }
+            )
+        ) { backStackEntry: NavBackStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId")
             val email = backStackEntry.arguments?.getString("userEmail")
+            val token = backStackEntry.arguments?.getString("authToken")
 
-            if (userId != null && email != null) {
+            if (userId != null && email != null && token != null) {
                 ProfileSetupScreen(
                     userId = userId,
                     userEmail = email,
+                    authToken = token,
                     onProfileSaved = {
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.SetupProfile.route) { inclusive = true }
@@ -103,7 +140,38 @@ fun AppNavGraph(
                 )
             } else {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Error: User context not found for profile setup.")
+                    Text("Error: User context or authentication token not found for profile setup.")
+                }
+            }
+        }
+
+        // --- Recruiter Profile Setup Screen ---
+        composable(
+            route = Screen.RecruiterProfileSetup.route,
+            arguments = listOf(
+                navArgument("userId") { type = NavType.StringType },
+                navArgument("userEmail") { type = NavType.StringType }
+            )
+        ) { backStackEntry: NavBackStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId")
+            val email = backStackEntry.arguments?.getString("userEmail")
+            val token = authViewModel.getAuthToken()
+
+            if (userId != null && email != null) {
+                RecruiterProfileSetupScreen(
+                    userId = userId,
+                    userEmail = email,
+                    authToken = token,
+                    onProfileSaved = {
+                        navController.navigate(Screen.RecruiterDashboard.route) {
+                            popUpTo(Screen.RecruiterProfileSetup.route) { inclusive = true }
+                        }
+                    },
+                    onBack = { navController.popBackStack() }
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error: User context not found for recruiter profile setup.")
                 }
             }
         }
@@ -112,13 +180,13 @@ fun AppNavGraph(
         composable(Screen.Home.route) {
             val userEmailToUse = userEmail ?: "Guest"
 
-            // FIX: Explicitly naming all arguments to avoid positional mismatch
             JobSeekerHomeScreen(
-                userEmail = userEmailToUse, // FIX: Passing the userEmail parameter
+                userEmail = userEmailToUse,
                 onNavigate = { route ->
                     when (route) {
-                        "edit_profile" -> navController.navigate(Screen.SetupProfile.createSetupProfileRoute(currentUserId ?: "0", userEmailToUse))
+                        "edit_profile" -> navController.navigate(Screen.SetupProfile.createSetupProfileRoute(currentUserId ?: "0", userEmailToUse, tokenForStartup))
                         "settings" -> navController.navigate(Screen.Settings.route)
+                        "jobs_feed" -> navController.navigate(Screen.JobSearch.route)
                         else -> navController.navigate(route)
                     }
                 },
@@ -133,8 +201,21 @@ fun AppNavGraph(
             )
         }
 
-        // --- Job Detail Screen (New Destination) ---
-        composable(Screen.JobDetail.route) { backStackEntry ->
+        // --- Job Search Screen ---
+        composable(Screen.JobSearch.route) {
+            JobSeekerJobListScreen(
+                onBack = { navController.popBackStack() },
+                onJobClick = { jobId ->
+                    navController.navigate(Screen.JobDetail.createRoute(jobId))
+                }
+            )
+        }
+
+        // --- Job Detail Screen ---
+        composable(
+            route = Screen.JobDetail.route,
+            arguments = listOf(navArgument("jobId") { type = NavType.StringType })
+        ) { backStackEntry: NavBackStackEntry ->
             val jobId = backStackEntry.arguments?.getString("jobId")
 
             if (jobId != null) {
@@ -169,12 +250,16 @@ fun AppNavGraph(
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Settings.route) { inclusive = true }
                     }
-                }
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
         // --- Post Job Screen ---
-        composable(Screen.PostJob.route) { backStackEntry ->
+        composable(
+            route = Screen.PostJob.route,
+            arguments = listOf(navArgument("recruiterId") { type = NavType.IntType })
+        ) { backStackEntry: NavBackStackEntry ->
             val recruiterId = backStackEntry.arguments?.getString("recruiterId")?.toIntOrNull() ?: 0
             RecruiterPostJobScreen(recruiterId = recruiterId)
         }

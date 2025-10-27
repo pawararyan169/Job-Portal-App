@@ -22,13 +22,10 @@ import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.*
 import androidx.credentials.GetCredentialResponse
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.*
 
 class MainActivity : ComponentActivity() {
 
@@ -80,14 +77,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Google Sign-In Logic (Must be included for compilation)
+    // Google Sign-In Logic (Required for compilation)
     private fun startGoogleSignIn(onLoggedIn: (User) -> Unit) {
         lifecycleScope.launch {
             try {
-                // Simplified logic for brevity, requires implementation details from previous chat
-                // ...
-                // This function is required for compilation but its body is not the core issue
-                // ...
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setServerClientId("YOUR_WEB_CLIENT_ID")
                     .setFilterByAuthorizedAccounts(false)

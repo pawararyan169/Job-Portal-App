@@ -40,6 +40,8 @@ data class JobSeekerProfile(
     val isComplete: Boolean = true
 )
 
+
+
 // --- AUTH MODELS ---
 data class UserRegistrationRequest(
     val email: String,
@@ -51,8 +53,18 @@ data class UserRegistrationRequest(
 
 data class UserRegistrationResponse(
     val success: Boolean,
-    val message: String
+    val message: String,
+    // FIX: ADDED MISSING FIELDS to match the backend response
+    val userId: String? = null,
+    val userEmail: String? = null
 )
+
+// Dummy/Other Data Models (for compilation context)
+
+// ... other models (Job, ProfileUpdateRequest, etc.)
+
+
+
 
 data class UserLoginRequest(
     val email: String,
@@ -65,4 +77,21 @@ data class UserLoginResponse(
     val userType: String?,
     val message: String?,
     val userId: String?
+)
+
+data class Job(
+    val id: String,
+    val title: String,
+    val company: String,
+    val location: String,
+    val salaryRange: String,
+    val descriptionSnippet: String,
+    val postDate: String,
+    val jobType: String
+)
+
+data class JobFeedResponse(
+    val success: Boolean,
+    val jobs: List<Job>,
+    val message: String?
 )

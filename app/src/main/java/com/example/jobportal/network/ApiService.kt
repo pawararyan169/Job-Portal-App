@@ -1,33 +1,37 @@
 package com.example.jobportal.network
 
-// FIX: Explicitly import ALL models from the correct 'model' package
+import com.example.jobportal.model.Job
 import com.example.jobportal.model.JobPost
-import com.example.jobportal.model.JobSeekerProfile
-import com.example.jobportal.model.JobFeedResponse
 import com.example.jobportal.model.ProfileUpdateRequest
 import com.example.jobportal.model.UserLoginRequest
 import com.example.jobportal.model.UserLoginResponse
 import com.example.jobportal.model.UserRegistrationRequest
 import com.example.jobportal.model.UserRegistrationResponse
-
+import retrofit2.Call
 import retrofit2.http.Body
-import retrofit2.http.POST
 import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.POST
+import retrofit2.http.PUT
 
 interface ApiService {
 
-    @POST("auth/signup")
-    suspend fun registerUser(@Body request: UserRegistrationRequest): UserRegistrationResponse
+    // AUTH Endpoints
+    @POST("auth/register")
+    fun registerUser(@Body request: UserRegistrationRequest): Call<UserRegistrationResponse>
 
     @POST("auth/login")
-    suspend fun loginUser(@Body request: UserLoginRequest): UserLoginResponse
+    fun loginUser(@Body request: UserLoginRequest): Call<UserLoginResponse>
 
+    // PROFILE Endpoints
+    @PUT("profile/update")
+    fun updateProfile(@Body request: ProfileUpdateRequest, @Header("Authorization") token: String): Call<UserRegistrationResponse>
+
+    // JOB FEED Endpoints
     @GET("jobs/feed")
-    suspend fun getJobFeed(): JobFeedResponse
+    fun getJobFeed(): Call<List<Job>>
 
-    @POST("profile/complete")
-    suspend fun updateProfile(@Body request: ProfileUpdateRequest): JobSeekerProfile
-
+    // RECRUITER Endpoints
     @POST("jobs/post")
-    suspend fun postJob(@Body jobPost: JobPost): JobPost
+    fun postJob(@Body jobPost: JobPost, @Header("Authorization") token: String): Call<Job>
 }
